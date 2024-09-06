@@ -1,0 +1,30 @@
+version: "3.9"
+services:
+  sqld:
+    image: ghcr.io/tursodatabase/libsql-server:latest
+    container_name: sqld
+    ports:
+      - "8080:8080"
+    environment:
+      - SQLD_NODE=primary
+
+  wapo-gateway:
+    image: wapo-devserver
+    container_name: wapo-gateway
+    ports:
+      - "8443:8443"
+    environment:
+      - WAPOJS_PUBLIC_SQLD_API=http://sqld:8080
+      - WAPOJS_PUBLIC_FILE_URL=http://file-server:3000/index.js
+
+  file-server:
+    image: lipanski/docker-static-website:latest
+    container_name: file-server
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./dist:/home/static
+      - ./httpd.conf:/home/static/httpd.conf:ro
+
+  # caddy:
+  #   image: caddy:2.8.4-alpine
