@@ -103,12 +103,16 @@ module.exports = (() => {
       }
       exports.sendResponse = sendResponse;
       function handle2(app2, opts) {
-        const serverName2 = opts.serverName || "localhost";
+        const isHttps = !("address" in opts);
+        let serverName = isHttps ? "localhost" : opts.address;
+        if (!("address" in opts) && !opts.serverName) {
+          opts.serverName = serverName;
+        }
         return function handler() {
-          Wapo.httpsListen({ ...opts, serverName: serverName2 }, async (req) => {
+          Wapo.httpsListen(opts, async (req) => {
             try {
               const request = new WapoRequest(req);
-              if (request.headers.get("host") !== serverName2) {
+              if (isHttps && request.headers.get("host") !== serverName) {
                 sendResponse(new Response("Upgrade Required", { status: 426 }), req);
               } else {
                 const response = await app2.fetch(request);
@@ -7077,13 +7081,7 @@ CREATE TABLE IF NOT EXISTS logs (
     console.log(JSON.stringify(data1));
     return c.text("pong");
   });
-  if (!process.env.WAPOJS_PUBLIC_CERT || !process.env.WAPOJS_PUBLIC_KEY) {
-    throw new Error("Missing WAPOJS_PUBLIC_CERT or WAPOJS_PUBLIC_KEY");
-  }
-  var certificateChain = Buffer.from(process.env.WAPOJS_PUBLIC_CERT, "base64").toString("utf-8");
-  var privateKey = Buffer.from(process.env.WAPOJS_PUBLIC_KEY, "base64").toString("utf-8");
-  var serverName = process.env.WAPOJS_PUBLIC_SERVER_NAME || "localhost";
-  var src_default = (0, import_host.handle)(app, { certificateChain, privateKey, serverName });
+  var src_default = (0, import_host.handle)(app, { address: process.env.WAPOJS_BIND });
   return __toCommonJS(src_exports);
 })();
 module.exports = module.exports?.default;
